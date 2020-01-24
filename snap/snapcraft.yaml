@@ -5,6 +5,7 @@ description: |
  a pyqt5 python3 hello world test
 grade: devel # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
+base: core18
 
 apps:
   pyqthelloworld:
@@ -12,20 +13,49 @@ apps:
     plugs:
     - desktop
     - desktop-legacy
-    - unity7
     - wayland
     - x11
     - opengl
 
 parts:
+  # This part installs the qt5 dependencies and a `desktop-launch` script to initialise
+  # desktop-specific features such as fonts, themes and the XDG environment.
+  # 
+  # It is copied straight from the snapcraft desktop helpers project. Please periodically
+  # check the source for updates and copy the changes.
+  #    https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
+  # 
+  desktop-qt5:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: qt
+    plugin: make
+    make-parameters: ["FLAVOR=qt5"]
+    build-packages:
+      - build-essential
+      - qtbase5-dev
+      - dpkg-dev
+    stage-packages:
+      - libxkbcommon0
+      - ttf-ubuntu-font-family
+      - dmz-cursor-theme
+      - light-themes
+      - adwaita-icon-theme
+      - gnome-themes-standard
+      - shared-mime-info
+      - libqt5gui5
+      - libgdk-pixbuf2.0-0
+      - libqt5svg5 # for loading icon themes which are svg
+      - try: [appmenu-qt5] # not available on core18
+      - locales-all
+      - xdg-user-dirs
+      - fcitx-frontend-qt5
+
   pyqthelloworld:
     after: [desktop-qt5]
     plugin: python
     python-version: python3
     source: git://github.com/ericoporto/pyqthelloworld
     source-type: git
-    prepare: 
-      - execstack --clear-execstack lib/python3.5/site-packages/PyQt5/Qt/lib/libQt5WebEngineCore.so.5
     build-packages:
       - python3
       - python3-pyqt5
@@ -35,8 +65,4 @@ parts:
       - python3-pyqt5
       - libc-bin
       - locales
-
-
-
-
-
+      
